@@ -29,10 +29,22 @@
 #define _ZF_BOX_UTIL_CONCAT_2(...) _ZF_BOX_UTIL_PASTE_2(__VA_ARGS__)
 #define _ZF_BOX_UTIL_CONCAT_5(...) _ZF_BOX_UTIL_PASTE_5(__VA_ARGS__)
 
+#define _ZF_BOX_UTIL_SWITCH_2_CASE_0(a, b) a
+#define _ZF_BOX_UTIL_SWITCH_2_CASE_1(a, b) b
+#define _ZF_BOX_UTIL_SWITCH_2(x, a, b) _ZF_BOX_UTIL_CONCAT_2(_ZF_BOX_UTIL_SWITCH_2_CASE_, x)(a, b)
+
+#define _ZF_BOX_UTIL_NOT(x) _ZF_BOX_UTIL_SWITCH_2(x, 1, 0)
+
 #define _ZF_BOX_UTIL_ARG_0(_0,...) _0
-#define _ZF_BOX_UTIL_ARG_15(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,...) _15
+#define _ZF_BOX_UTIL_ARG_1(_0,_1,...) _1
+#define _ZF_BOX_UTIL_ARG_16(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,...) _16
 #define _ZF_BOX_UTIL_ARG_HEAD(...) _ZF_BOX_UTIL_ARG_0(__VA_ARGS__, ~)
 #define _ZF_BOX_UTIL_ARG_TAIL(_, ...) __VA_ARGS__
+#define _ZF_BOX_UTIL_ARG_ID(...) __VA_ARGS__
+
+#define _ZF_BOX_UTIL_BLANK(...)
+#define _ZF_BOX_UTIL_INVOKE_1(f, ...) f(__VA_ARGS__)
+#define _ZF_BOX_UTIL_INVOKE_2(f, g, ...) f(g(__VA_ARGS__))
 
 #define _ZF_BOX_UTIL_HAS_COMMA(...) _ZF_BOX_UTIL_ARG_15(__VA_ARGS__,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,~)
 #define _ZF_BOX_UTIL_COMMA_FUNC(...) ,
