@@ -206,10 +206,8 @@ static int test_equal(const char *const expected, const char *const actual,
 		} \
 	} while(0)
 
-static int test_run()
+static int test_macros()
 {
-	int a[2];//[2]);
-	(void)a;
 	/* map */
 	#undef F
 	#define F(x) int x;
@@ -243,9 +241,9 @@ static int test_run()
 }
 
 #define SMALL_DATA(FIELD, _) \
-	FIELD(_, UINT32, "small.value", value) \
-	FIELD(_, DOUBLE, "small.duration", duration)
-	//FIELD(_, ARRAY(CHAR, 16), "small.duration", text)
+	FIELD(_, INT32, "id", id) \
+	FIELD(_, UINT32, "count", count) \
+	FIELD(_, DOUBLE, "duration", duration)
 ZF_BOX_CLASS_DECL(SMALL_DATA);
 static ZF_BOX_CLASS_DEF(SMALL_DATA);
 
@@ -253,25 +251,73 @@ static ZF_BOX_CLASS_DEF(SMALL_DATA);
 	FIELD(_, INSTANCE(SMALL_DATA), "improved.value", small) \
 	FIELD(_, ARRAY(CHAR, 4), "improved.value", char_array) \
 	FIELD(_, ARRAY(INSTANCE(SMALL_DATA), 4), "improved.value", small_array) \
-	FIELD(_, BUFFER(CHAR), "improved.value", char_buffer)
+	FIELD(_, BUFFER(CHAR), "improved.value", char_buffer) \
+	FIELD(_, STRING(32), "text", text) \
+	FIELD(_, ARRAY(CHAR, 64), "extra", extra)
 ZF_BOX_CLASS_DECL(BIG_DATA);
 static ZF_BOX_CLASS_DEF(BIG_DATA);
 
-static void test_init()
+static int test_generator()
 {
-	_ZF_BOX_INSTANCE_TYPE(SMALL_DATA) small;
-	ZF_BOX_INSTANCE_ASSIGN(SMALL_DATA, &small, 1, 2.0f);
+	ZF_BOX_INSTANCE_TYPE(SMALL_DATA) small;
+	ZF_BOX_INSTANCE_ASSIGN(SMALL_DATA, &small, -1, 42, 2.0f);
 	(void)small;
+	return 0;
 }
 
-/*
-#define BIG_DATA(FIELD, _) \
-	FIELD(_, INSTANCE(SMALL_DATA), "improved.value", array_i) \
-	FIELD(_, ARRAY(INSTANCE(SMALL_DATA), 10), "improved.value", array) \
-	FIELD(_, ARRAY(DOUBLE, 10), "improved.value", array_d) \
-	FIELD(_, UINT32, "improved.value", value) \
-	FIELD(_, DOUBLE, "improved.duration", duration) \
-	FIELD(_, STRING, "improved.caption", caption) \
-	FIELD(_, BYTES(38), "improved.data", data)
-ZF_BOX_CLASS_DECL(BIG_DATA)
-*/
+static void print_it(const zf_box_instance_t *const p)
+{
+	const zf_box_class_base_t *const base = &p->isa->base;
+	const zf_box_ivar_t *const ivars = p->isa->ivar_list;
+	fprintf(stderr, "%s: %u bytes\n", base->name, (unsigned)base->size);
+	for (const zf_box_ivar_t *i = ivars, *const e = ivars + base->ivar_count;
+		 e != i; ++i)
+	{
+		switch (i->type)
+		{
+		case ZF_BOX_TYPE_INT32:
+			fprintf(stderr, "%s: %i\n", i->name,
+					*(int32_t *)((char *)p + i->offset));
+			break;
+		case ZF_BOX_TYPE_UINT32:
+			fprintf(stderr, "%s: %u\n", i->name,
+					*(uint32_t *)((char *)p + i->offset));
+			break;
+		case ZF_BOX_TYPE_DOUBLE:
+			fprintf(stderr, "%s: %f\n", i->name,
+					*(double *)((char *)p + i->offset));
+			break;
+		default:
+			fprintf(stderr, "%s: <unprintable>\n", i->name);
+		}
+	}
+}
+
+#define PRINT_IT(CLASS, ...) \
+	do { \
+		ZF_BOX_CLASS_DECL(CLASS); \
+		static const ZF_BOX_CLASS_DEF(CLASS); \
+		ZF_BOX_INSTANCE_TYPE(CLASS) v; \
+		ZF_BOX_INSTANCE_ASSIGN(CLASS, &v, __VA_ARGS__); \
+		print_it((zf_box_instance_t *)&v); \
+	} while(0)
+
+#define SMALL_MESSAGE(FIELD, _) \
+	FIELD(_, INT32, "id", id) \
+	FIELD(_, UINT32, "count", count) \
+	FIELD(_, DOUBLE, "duration", duration)
+
+static int test_printer()
+{
+	PRINT_IT(SMALL_MESSAGE, -1, 42, 17.5f);
+	PRINT_IT(SMALL_DATA, -2, 43, 17.6f);
+	return 0;
+}
+
+static int test_run()
+{
+	if (0 != test_macros()) return -1;
+	if (0 != test_generator()) return -1;
+	if (0 != test_printer()) return -1;
+	return 0;
+}
